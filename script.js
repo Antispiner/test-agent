@@ -13,13 +13,14 @@
   let currentPlayer = 'X';
   let gameOver = false;
 
-  function handleClick(e) {
-    const idx = Number(e.target.dataset.index);
+  function playCell(cell) {
+    const idx = Number(cell.dataset.index);
     if (board[idx] || gameOver) return;
 
     board[idx] = currentPlayer;
-    e.target.textContent = currentPlayer;
-    e.target.classList.add('taken', currentPlayer.toLowerCase());
+    cell.textContent = currentPlayer;
+    cell.classList.add('taken', currentPlayer.toLowerCase());
+    cell.setAttribute('aria-label', `Cell ${idx + 1}: ${currentPlayer}`);
 
     const winCombo = checkWin(currentPlayer);
     if (winCombo) {
@@ -57,6 +58,20 @@
     });
   }
 
-  cells.forEach(cell => cell.addEventListener('click', handleClick));
+  function handleClick(e) {
+    playCell(e.target);
+  }
+
+  function handleKeydown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      playCell(e.target);
+    }
+  }
+
+  cells.forEach(cell => {
+    cell.addEventListener('click', handleClick);
+    cell.addEventListener('keydown', handleKeydown);
+  });
   restartBtn.addEventListener('click', reset);
 })();

@@ -70,10 +70,17 @@ h1 {
   user-select: none;
 }
 
-.cell:hover:not(.taken) {
+.cell:hover:not(.taken),
+.cell:focus-visible:not(.taken) {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.3);
   transform: scale(1.03);
+  outline: none;
+}
+
+.cell:focus-visible {
+  outline: 2px solid #7b2ff7;
+  outline-offset: 2px;
 }
 
 .cell.taken {
