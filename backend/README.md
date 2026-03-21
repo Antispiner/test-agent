@@ -41,3 +41,27 @@ docker run -p 8080:8080 neighbor-game
 ```bash
 ./mvnw test
 ```
+
+## API Endpoints
+
+### Game (`/api/game`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/game/start` | Start a new game, returns initial progress |
+| `GET` | `/api/game/{playerId}` | Get player's current progress |
+| `DELETE` | `/api/game/{playerId}` | Reset player's progress |
+| `POST` | `/api/game/{playerId}/levels/{levelId}/pranks/{prankId}/execute` | Execute a prank in a level |
+
+### Levels (`/api/levels`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/levels?playerId={playerId}` | List all levels for a player |
+| `GET` | `/api/levels/{levelId}?playerId={playerId}` | Get a specific level's state |
+
+### Actuator
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/actuator/health` | Application health check |
