@@ -1,5 +1,24 @@
+# Dependencies
 node_modules/
+
+# Build outputs
 dist/
-*.log
-.DS_Store
+build/
+target/
+
+# Java
+*.jar
+*.class
+
+# Environment
 .env
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
