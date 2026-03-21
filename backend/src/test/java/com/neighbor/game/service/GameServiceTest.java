@@ -72,6 +72,15 @@ class GameServiceTest {
     }
 
     @Test
+    void executePrank_lockedLevel_throwsIllegalState() {
+        GameProgress progress = gameService.startNewGame();
+
+        // Player starts on level 1; level 2 prank 6 should be inaccessible
+        assertThrows(IllegalStateException.class,
+                () -> gameService.executePrank(progress.playerId(), 2, 6));
+    }
+
+    @Test
     void resetProgress_removesPlayer() {
         GameProgress progress = gameService.startNewGame();
         gameService.resetProgress(progress.playerId());
