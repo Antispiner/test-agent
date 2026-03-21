@@ -65,3 +65,32 @@ docker run -p 8080:8080 neighbor-game
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/actuator/health` | Application health check |
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SERVER_PORT` | HTTP listen port | `8080` |
+| `SPRING_DATASOURCE_URL` | JDBC connection URL | `jdbc:h2:mem:gamedb` |
+| `SPRING_DATASOURCE_USERNAME` | Database username | `sa` |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | *(empty)* |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | Schema generation strategy | `create` |
+| `SPRING_JPA_SHOW_SQL` | Log SQL statements | `false` |
+| `SPRING_PROFILES_ACTIVE` | Active Spring profile | *(none)* |
+
+### Profiles
+
+- **default** — In-memory H2 database, auto-creates schema on startup.
+- **dev** — Enables the H2 web console at `/h2-console`.
+
+Activate a profile:
+
+```bash
+java -jar target/neighbor-game-0.1.0-SNAPSHOT.jar --spring.profiles.active=dev
+```
+
+### CORS
+
+The API allows cross-origin requests from `http://localhost:3000` and `http://localhost:5173` for `GET`, `POST`, and `DELETE` methods.
