@@ -5,6 +5,7 @@ import { COLORS } from '../engine/colors';
 import { drawButton, hitTest, roundRect } from '../engine/draw';
 import { announce } from '../engine/a11y';
 import { LevelSelectScene } from './LevelSelectScene';
+import { GameLevelScene } from './GameLevelScene';
 
 export class LevelCompleteScene implements Scene {
   private hoverNext = false;
@@ -119,15 +120,12 @@ export class LevelCompleteScene implements Scene {
     } else if (key === 'ArrowLeft') {
       this.focusIndex = this.focusIndex === 1 ? 0 : 1;
     } else if (key === 'Enter' || key === ' ') {
-      const freshProgress = await this.api.getProgress(this.progress.playerId);
-      this.setProgress(freshProgress);
-      await this.sceneManager.switchTo(
-        new LevelSelectScene(this.sceneManager, this.api, freshProgress, this.setProgress)
-      );
+      await this.activateButton(this.focusIndex);
       return;
     }
     this.hoverLevels = this.focusIndex === 0;
     this.hoverNext = this.focusIndex === 1;
+    announce(this.focusIndex === 0 ? 'Level Select button' : 'Next Level button');
   }
 
   async onClick(x: number, y: number) {
@@ -135,13 +133,35 @@ export class LevelCompleteScene implements Scene {
     const btnH = 44;
     const w = 800;
 
-    if (hitTest(x, y, w / 2 - btnW - 10, 380, btnW, btnH) ||
-        hitTest(x, y, w / 2 + 10, 380, btnW, btnH)) {
-      const freshProgress = await this.api.getProgress(this.progress.playerId);
-      this.setProgress(freshProgress);
-      await this.sceneManager.switchTo(
-        new LevelSelectScene(this.sceneManager, this.api, freshProgress, this.setProgress)
-      );
+    if (hitTest(x, y, w / 2 - btnW - 10, 380, btnW, btnH)) {
+      await this.activateButton(0);
+    } else if (hitTest(x, y, w / 2 + 10, 380, btnW, btnH)) {
+      await this.activateButton(1);
     }
+  }
+
+  private async activateButton(index: number) {
+    const freshProgress = await this.api.getProgress(this.progress.playerId);
+    this.setProgress(freshProgress);
+
+    if (index === 1) {
+      // "Next Level" — try to load the next level
+      const nextLevelId = this.level.id + 1;
+      try {
+        const nextLevel = await this.api.getLevel(freshProgress.playerId, nextLevelId);
+        if (nextLevel && nextLevel.unlocked) {
+          await this.sceneManager.switchTo(
+            new GameLevelScene(this.sceneManager, this.api, freshProgress, nextLevel, this.setProgress)
+          );
+          return;
+        }
+      } catch {
+        // Next level doesn't exist or isn't available — fall through to level select
+      }
+    }
+
+    await this.sceneManager.switchTo(
+      new LevelSelectScene(this.sceneManager, this.api, freshProgress, this.setProgress)
+    );
   }
 }
