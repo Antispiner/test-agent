@@ -62,6 +62,14 @@ public class GameService {
             throw new IllegalArgumentException("Prank does not belong to level " + levelId);
         }
 
+        // Verify the player has unlocked this level (level 1 is always unlocked)
+        Level level = prank.getLevel();
+        boolean levelUnlocked = level.getOrderIndex() == 1
+                || p.getCompletedLevelIds().contains(levelId - 1);
+        if (!levelUnlocked) {
+            throw new LevelNotUnlockedException(levelId);
+        }
+
         if (p.getExecutedPrankIds().contains(prankId)) {
             return new PrankResult(prankId, false, "Already executed this prank!", 0, p.getCurrentAnger(), false);
         }
@@ -89,7 +97,6 @@ public class GameService {
         }
 
         // Check level completion
-        Level level = prank.getLevel();
         boolean levelCompleted = p.getCurrentAnger() >= level.getMaxAnger();
         if (levelCompleted && !p.getCompletedLevelIds().contains(levelId)) {
             p.getCompletedLevelIds().add(levelId);

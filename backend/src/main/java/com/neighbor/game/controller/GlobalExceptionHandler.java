@@ -1,6 +1,7 @@
 package com.neighbor.game.controller;
 
 import com.neighbor.game.service.LevelNotFoundException;
+import com.neighbor.game.service.LevelNotUnlockedException;
 import com.neighbor.game.service.PlayerNotFoundException;
 import com.neighbor.game.service.PrankNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LevelNotFoundException.class)
     public ProblemDetail handleLevelNotFound(LevelNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(LevelNotUnlockedException.class)
+    public ProblemDetail handleLevelNotUnlocked(LevelNotUnlockedException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
