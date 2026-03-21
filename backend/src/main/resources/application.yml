@@ -15,10 +15,6 @@ spring:
     show-sql: false
     open-in-view: false
     defer-datasource-initialization: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   sql:
     init:
       mode: always

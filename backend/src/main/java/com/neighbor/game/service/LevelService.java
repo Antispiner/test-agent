@@ -44,7 +44,9 @@ public class LevelService {
 
     private LevelState toLevelState(Level level, PlayerProgress player) {
         boolean unlocked = level.getOrderIndex() == 1
-                || player.getCompletedLevelIds().contains(level.getId() - 1);
+                || levelRepo.findByOrderIndex(level.getOrderIndex() - 1)
+                        .map(prev -> player.getCompletedLevelIds().contains(prev.getId()))
+                        .orElse(false);
         boolean completed = player.getCompletedLevelIds().contains(level.getId());
         int anger = (player.getCurrentLevelId() != null && player.getCurrentLevelId().equals(level.getId()))
                 ? player.getCurrentAnger() : 0;
