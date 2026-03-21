@@ -22,7 +22,7 @@ Start the local dev server with hot reload:
 npm run dev
 ```
 
-The game opens at `http://localhost:5173` by default. In dev mode, Vite proxies `/api` requests to the backend server.
+The game opens at `http://localhost:3000` by default. In dev mode, Vite proxies `/api` requests to the backend server.
 
 ## Build
 
