@@ -6,9 +6,24 @@
     <title>How to Annoy Your Neighbor</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #1a1a2e; color: #eee; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        body {
+            background: #1a1a2e;
+            color: #eee;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
         #game-container { position: relative; }
-        canvas { border: 2px solid #e94560; border-radius: 8px; cursor: pointer; }
+        canvas {
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            cursor: pointer;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
     </style>
 </head>
 <body>

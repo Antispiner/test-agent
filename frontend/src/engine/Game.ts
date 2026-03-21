@@ -1,41 +1,43 @@
 /**
- * Main game class — manages game loop, scene transitions, and state.
- * Placeholder skeleton for MVP implementation.
+ * Main game class — manages game loop, scene transitions, and input.
  */
 
 import { ApiClient, GameProgress } from '../api/client';
+import { SceneManager } from './SceneManager';
+import { MenuScene } from '../scenes/MenuScene';
 
 export class Game {
-  private playerId: string | null = null;
-  private progress: GameProgress | null = null;
+  private sceneManager = new SceneManager();
   private running = false;
+  private progress: GameProgress | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
     private ctx: CanvasRenderingContext2D,
     private api: ApiClient
   ) {
-    this.canvas.addEventListener('click', (e) => this.onClick(e));
+    this.canvas.addEventListener('click', (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      this.sceneManager.onClick(x, y);
+    });
+
+    this.canvas.addEventListener('mousemove', (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      this.sceneManager.onMouseMove(x, y);
+    });
   }
 
   async start() {
-    // Check for existing session
-    const savedId = localStorage.getItem('neighbor_player_id');
-    if (savedId) {
-      try {
-        this.progress = await this.api.getProgress(savedId);
-        this.playerId = savedId;
-      } catch {
-        localStorage.removeItem('neighbor_player_id');
-      }
-    }
-
-    if (!this.playerId) {
-      this.progress = await this.api.startGame();
-      this.playerId = this.progress.playerId;
-      localStorage.setItem('neighbor_player_id', this.playerId);
-    }
-
+    const setProgress = (p: GameProgress) => { this.progress = p; };
+    await this.sceneManager.switchTo(new MenuScene(this.sceneManager, this.api, setProgress));
     this.running = true;
     this.gameLoop();
   }
@@ -48,23 +50,7 @@ export class Game {
 
   private render() {
     const { ctx, canvas } = this;
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // TODO: Render current scene (menu, level select, or game level)
-    ctx.fillStyle = '#e94560';
-    ctx.font = '32px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('How to Annoy Your Neighbor', canvas.width / 2, 80);
-
-    ctx.fillStyle = '#eee';
-    ctx.font = '18px Segoe UI';
-    ctx.fillText(`Player: ${this.playerId}  |  Score: ${this.progress?.totalScore ?? 0}`, canvas.width / 2, 120);
-    ctx.fillText('Click anywhere to start playing!', canvas.width / 2, canvas.height / 2);
-  }
-
-  private onClick(_e: MouseEvent) {
-    // TODO: Delegate to current scene's click handler
-    console.log('Click registered — scene handling TBD');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    this.sceneManager.render(ctx, canvas.width, canvas.height);
   }
 }
