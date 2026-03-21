@@ -10,6 +10,7 @@ export class MenuScene implements Scene {
   private hoverContinue = false;
   private savedGame = false;
   private loading = false;
+  private focusIndex = 0;
 
   constructor(
     private sceneManager: SceneManager,
@@ -97,6 +98,23 @@ export class MenuScene implements Scene {
     } else if (this.savedGame && hitTest(x, y, btnX, 445, btnW, btnH)) {
       await this.continueGame();
     }
+  }
+
+  async onKeyDown(key: string) {
+    const buttonCount = this.savedGame ? 2 : 1;
+    if (key === 'Tab' || key === 'ArrowDown') {
+      this.focusIndex = (this.focusIndex + 1) % buttonCount;
+    } else if (key === 'ArrowUp') {
+      this.focusIndex = (this.focusIndex - 1 + buttonCount) % buttonCount;
+    } else if (key === 'Enter' || key === ' ') {
+      if (this.focusIndex === 0) {
+        await this.startNew();
+      } else if (this.focusIndex === 1 && this.savedGame) {
+        await this.continueGame();
+      }
+    }
+    this.hoverStart = this.focusIndex === 0;
+    this.hoverContinue = this.focusIndex === 1 && this.savedGame;
   }
 
   private async startNew() {

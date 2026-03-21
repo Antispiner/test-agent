@@ -8,6 +8,7 @@ import { LevelSelectScene } from './LevelSelectScene';
 export class LevelCompleteScene implements Scene {
   private hoverNext = false;
   private hoverLevels = false;
+  private focusIndex = 0;
   private confetti: Array<{ x: number; y: number; vx: number; vy: number; color: string; size: number }> = [];
 
   constructor(
@@ -93,6 +94,23 @@ export class LevelCompleteScene implements Scene {
     const w = 800;
     this.hoverLevels = hitTest(x, y, w / 2 - btnW - 10, 380, btnW, btnH);
     this.hoverNext = hitTest(x, y, w / 2 + 10, 380, btnW, btnH);
+  }
+
+  async onKeyDown(key: string) {
+    if (key === 'Tab' || key === 'ArrowRight') {
+      this.focusIndex = this.focusIndex === 0 ? 1 : 0;
+    } else if (key === 'ArrowLeft') {
+      this.focusIndex = this.focusIndex === 1 ? 0 : 1;
+    } else if (key === 'Enter' || key === ' ') {
+      const freshProgress = await this.api.getProgress(this.progress.playerId);
+      this.setProgress(freshProgress);
+      await this.sceneManager.switchTo(
+        new LevelSelectScene(this.sceneManager, this.api, freshProgress, this.setProgress)
+      );
+      return;
+    }
+    this.hoverLevels = this.focusIndex === 0;
+    this.hoverNext = this.focusIndex === 1;
   }
 
   async onClick(x: number, y: number) {

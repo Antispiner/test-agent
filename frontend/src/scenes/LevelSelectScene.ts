@@ -17,6 +17,7 @@ export class LevelSelectScene implements Scene {
   private levels: LevelState[] = [];
   private cards: LevelCard[] = [];
   private hoverIdx = -1;
+  private focusIdx = -1;
   private loading = true;
 
   constructor(
@@ -78,7 +79,7 @@ export class LevelSelectScene implements Scene {
 
     // Level cards
     for (let i = 0; i < this.cards.length; i++) {
-      this.renderCard(ctx, this.cards[i], i === this.hoverIdx);
+      this.renderCard(ctx, this.cards[i], i === this.hoverIdx || i === this.focusIdx);
     }
 
     // Footer hint
@@ -170,6 +171,34 @@ export class LevelSelectScene implements Scene {
         this.hoverIdx = i;
         break;
       }
+    }
+  }
+
+  async onKeyDown(key: string) {
+    if (this.loading || this.cards.length === 0) return;
+
+    if (key === 'Tab' || key === 'ArrowRight') {
+      this.focusIdx = this.focusIdx < this.cards.length - 1 ? this.focusIdx + 1 : 0;
+    } else if (key === 'ArrowLeft') {
+      this.focusIdx = this.focusIdx > 0 ? this.focusIdx - 1 : this.cards.length - 1;
+    } else if (key === 'Enter' || key === ' ') {
+      if (this.focusIdx >= 0 && this.focusIdx < this.cards.length) {
+        const card = this.cards[this.focusIdx];
+        if (card.level.unlocked) {
+          const levelState = await this.api.getLevel(this.progress.playerId, card.level.id);
+          await this.sceneManager.switchTo(
+            new GameLevelScene(
+              this.sceneManager, this.api,
+              this.progress, levelState, this.setProgress
+            )
+          );
+        }
+      }
+    } else if (key === 'Escape') {
+      const { MenuScene } = await import('./MenuScene');
+      await this.sceneManager.switchTo(
+        new MenuScene(this.sceneManager, this.api, this.setProgress)
+      );
     }
   }
 

@@ -33,6 +33,7 @@ export class GameLevelScene implements Scene {
   private executing = false;
   private animAnger = 0;
   private tooltip: { x: number; y: number; prank: PrankInfo } | null = null;
+  private focusPrankIdx = -1;
 
   constructor(
     private sceneManager: SceneManager,
@@ -327,6 +328,43 @@ export class GameLevelScene implements Scene {
         this.tooltip = { x, y, prank: hb.prank };
         break;
       }
+    }
+  }
+
+  async onKeyDown(key: string) {
+    if (key === 'Escape') {
+      this.progress = await this.api.getProgress(this.progress.playerId);
+      this.setProgress(this.progress);
+      await this.sceneManager.switchTo(
+        new LevelSelectScene(this.sceneManager, this.api, this.progress, this.setProgress)
+      );
+      return;
+    }
+
+    if (key === 'Tab' || key === 'ArrowRight' || key === 'ArrowDown') {
+      this.focusPrankIdx = this.focusPrankIdx < this.prankHitboxes.length - 1
+        ? this.focusPrankIdx + 1 : 0;
+    } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+      this.focusPrankIdx = this.focusPrankIdx > 0
+        ? this.focusPrankIdx - 1 : this.prankHitboxes.length - 1;
+    } else if (key === 'Enter' || key === ' ') {
+      if (this.focusPrankIdx >= 0 && this.focusPrankIdx < this.prankHitboxes.length) {
+        const hb = this.prankHitboxes[this.focusPrankIdx];
+        if (hb.prank.available && !hb.prank.executed) {
+          await this.executePrank(hb.prank);
+        } else if (hb.prank.executed) {
+          this.addToast('Already pranked!', false);
+        } else {
+          this.addToast('Need to complete another prank first!', false);
+        }
+      }
+    }
+
+    // Update hover state to match keyboard focus
+    if (this.focusPrankIdx >= 0 && this.focusPrankIdx < this.prankHitboxes.length) {
+      const hb = this.prankHitboxes[this.focusPrankIdx];
+      this.hoverPrank = hb.prank;
+      this.tooltip = { x: hb.x + hb.w / 2, y: hb.y, prank: hb.prank };
     }
   }
 

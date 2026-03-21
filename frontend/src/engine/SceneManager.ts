@@ -22,4 +22,8 @@ export class SceneManager {
   onMouseMove(x: number, y: number) {
     this.current?.onMouseMove?.(x, y);
   }
+
+  onKeyDown(key: string) {
+    this.current?.onKeyDown?.(key);
+  }
 }
