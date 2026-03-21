@@ -79,7 +79,7 @@ export class LevelSelectScene implements Scene {
 
     // Level cards
     for (let i = 0; i < this.cards.length; i++) {
-      this.renderCard(ctx, this.cards[i], i === this.hoverIdx || i === this.focusIdx);
+      this.renderCard(ctx, this.cards[i], i === this.hoverIdx || i === this.focusIdx, i === this.focusIdx);
     }
 
     // Footer hint
@@ -88,7 +88,7 @@ export class LevelSelectScene implements Scene {
     ctx.fillText('Click a level to play. Complete levels to unlock the next one.', w / 2, h - 40);
   }
 
-  private renderCard(ctx: CanvasRenderingContext2D, card: LevelCard, hover: boolean) {
+  private renderCard(ctx: CanvasRenderingContext2D, card: LevelCard, hover: boolean, focused: boolean) {
     const { level, x, y, w, h } = card;
     const locked = !level.unlocked;
     const completed = level.completed;
@@ -96,6 +96,19 @@ export class LevelSelectScene implements Scene {
     // Card background
     const bgColor = locked ? '#1a1a2e' : hover ? COLORS.panelLight : COLORS.panel;
     roundRect(ctx, x, y, w, h, 12, bgColor, locked ? COLORS.locked : COLORS.primary);
+
+    // Keyboard focus ring
+    if (focused) {
+      ctx.save();
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 3]);
+      ctx.beginPath();
+      ctx.rect(x - 4, y - 4, w + 8, h + 8);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
 
     // Room icon area
     const iconColors: Record<string, string> = {

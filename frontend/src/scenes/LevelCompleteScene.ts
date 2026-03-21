@@ -84,8 +84,22 @@ export class LevelCompleteScene implements Scene {
     // Buttons
     const btnW = 180;
     const btnH = 44;
-    drawButton(ctx, w / 2 - btnW - 10, 380, btnW, btnH, '\u2190 Level Select', this.hoverLevels);
-    drawButton(ctx, w / 2 + 10, 380, btnW, btnH, 'Next Level \u2192', this.hoverNext);
+    const levelsX = w / 2 - btnW - 10;
+    const nextX = w / 2 + 10;
+    drawButton(ctx, levelsX, 380, btnW, btnH, '\u2190 Level Select', this.hoverLevels);
+    drawButton(ctx, nextX, 380, btnW, btnH, 'Next Level \u2192', this.hoverNext);
+
+    // Keyboard focus ring
+    const focusX = this.focusIndex === 0 ? levelsX : nextX;
+    ctx.save();
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath();
+    ctx.rect(focusX - 4, 376, btnW + 8, btnH + 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
   onMouseMove(x: number, y: number) {

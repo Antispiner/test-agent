@@ -122,8 +122,10 @@ export class GameLevelScene implements Scene {
   }
 
   private renderPrankObjects(ctx: CanvasRenderingContext2D) {
-    for (const hb of this.prankHitboxes) {
+    for (let i = 0; i < this.prankHitboxes.length; i++) {
+      const hb = this.prankHitboxes[i];
       const isHover = this.hoverPrank === hb.prank;
+      const isFocused = i === this.focusPrankIdx;
       const executed = hb.prank.executed;
       const available = hb.prank.available;
 
@@ -134,6 +136,19 @@ export class GameLevelScene implements Scene {
         const color = executed ? '#4a4a4a' : available ? '#e94560' : '#666';
         roundRect(ctx, hb.x, hb.y, hb.w, hb.h, 6, color,
           isHover && available && !executed ? COLORS.warning : undefined);
+      }
+
+      // Keyboard focus indicator — dashed cyan ring
+      if (isFocused) {
+        ctx.save();
+        ctx.strokeStyle = '#22d3ee';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 3]);
+        ctx.beginPath();
+        ctx.rect(hb.x - 5, hb.y - 5, hb.w + 10, hb.h + 10);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
       }
 
       // Interaction indicators

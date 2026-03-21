@@ -63,9 +63,11 @@ export class MenuScene implements Scene {
     const btnX = (w - btnW) / 2;
 
     drawButton(ctx, btnX, 380, btnW, btnH, 'New Game', this.hoverStart);
+    if (this.focusIndex === 0) this.drawFocusRing(ctx, btnX, 380, btnW, btnH);
 
     if (this.savedGame) {
       drawButton(ctx, btnX, 445, btnW, btnH, 'Continue', this.hoverContinue);
+      if (this.focusIndex === 1) this.drawFocusRing(ctx, btnX, 445, btnW, btnH);
     }
 
     if (this.loading) {
@@ -98,6 +100,18 @@ export class MenuScene implements Scene {
     } else if (this.savedGame && hitTest(x, y, btnX, 445, btnW, btnH)) {
       await this.continueGame();
     }
+  }
+
+  private drawFocusRing(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+    ctx.save();
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath();
+    ctx.rect(x - 4, y - 4, w + 8, h + 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
   async onKeyDown(key: string) {
