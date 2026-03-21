@@ -31,7 +31,9 @@ public class GameService {
     public GameProgress startNewGame() {
         PlayerProgress p = new PlayerProgress();
         p.setPlayerId(UUID.randomUUID().toString().substring(0, 8));
-        p.setCurrentLevelId(1L);
+        Level firstLevel = levelRepo.findByOrderIndex(1)
+                .orElseThrow(() -> new IllegalStateException("No level with orderIndex=1 found"));
+        p.setCurrentLevelId(firstLevel.getId());
         p.setCurrentAnger(0);
         p.setTotalScore(0);
         playerRepo.save(p);
@@ -47,6 +49,9 @@ public class GameService {
 
     @Transactional
     public void resetProgress(String playerId) {
+        if (!playerRepo.existsById(playerId)) {
+            throw new PlayerNotFoundException(playerId);
+        }
         playerRepo.deleteById(playerId);
     }
 
@@ -94,8 +99,9 @@ public class GameService {
         if (levelCompleted && !p.getCompletedLevelIds().contains(levelId)) {
             p.getCompletedLevelIds().add(levelId);
             p.setCurrentAnger(0);
-            // Advance to next level if available
-            levelRepo.findById(levelId + 1).ifPresent(next -> p.setCurrentLevelId(next.getId()));
+            // Advance to next level by orderIndex
+            levelRepo.findFirstByOrderIndexGreaterThanOrderByOrderIndexAsc(level.getOrderIndex())
+                    .ifPresent(next -> p.setCurrentLevelId(next.getId()));
             message += " LEVEL COMPLETE!";
         }
 

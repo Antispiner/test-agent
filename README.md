@@ -56,4 +56,4 @@ Dev server at http://localhost:5173
 | DELETE | `/api/game/{playerId}` | Reset game |
 | GET | `/api/levels?playerId=X` | List levels |
 | GET | `/api/levels/{id}?playerId=X` | Get level details |
-| POST | `/api/game/{pid}/levels/{lid}/pranks/{pid}/execute` | Execute prank |
+| POST | `/api/game/{playerId}/levels/{levelId}/pranks/{prankId}/execute` | Execute prank |
