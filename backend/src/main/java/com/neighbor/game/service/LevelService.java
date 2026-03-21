@@ -3,10 +3,10 @@ package com.neighbor.game.service;
 import com.neighbor.game.dto.LevelState;
 import com.neighbor.game.model.Level;
 import com.neighbor.game.model.PlayerProgress;
-import com.neighbor.game.model.Prank;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import com.neighbor.game.repository.LevelRepository;
+import com.neighbor.game.repository.PlayerProgressRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -14,30 +14,37 @@ import java.util.Set;
 @Service
 public class LevelService {
 
-    @PersistenceContext
-    private EntityManager em;
+    private final LevelRepository levelRepo;
+    private final PlayerProgressRepository playerRepo;
 
+    public LevelService(LevelRepository levelRepo, PlayerProgressRepository playerRepo) {
+        this.levelRepo = levelRepo;
+        this.playerRepo = playerRepo;
+    }
+
+    @Transactional(readOnly = true)
     public List<LevelState> listLevels(String playerId) {
-        PlayerProgress p = em.find(PlayerProgress.class, playerId);
-        if (p == null) throw new IllegalArgumentException("Player not found: " + playerId);
+        PlayerProgress p = playerRepo.findById(playerId)
+                .orElseThrow(() -> new PlayerNotFoundException(playerId));
 
-        List<Level> levels = em.createQuery("SELECT l FROM Level l ORDER BY l.orderIndex", Level.class).getResultList();
-
+        List<Level> levels = levelRepo.findAllByOrderByOrderIndexAsc();
         return levels.stream().map(l -> toLevelState(l, p)).toList();
     }
 
+    @Transactional(readOnly = true)
     public LevelState getLevel(String playerId, long levelId) {
-        PlayerProgress p = em.find(PlayerProgress.class, playerId);
-        if (p == null) throw new IllegalArgumentException("Player not found: " + playerId);
+        PlayerProgress p = playerRepo.findById(playerId)
+                .orElseThrow(() -> new PlayerNotFoundException(playerId));
 
-        Level level = em.find(Level.class, levelId);
-        if (level == null) throw new IllegalArgumentException("Level not found: " + levelId);
+        Level level = levelRepo.findById(levelId)
+                .orElseThrow(() -> new LevelNotFoundException(levelId));
 
         return toLevelState(level, p);
     }
 
     private LevelState toLevelState(Level level, PlayerProgress player) {
-        boolean unlocked = level.getOrderIndex() == 1 || player.getCompletedLevelIds().contains(level.getId() - 1);
+        boolean unlocked = level.getOrderIndex() == 1
+                || player.getCompletedLevelIds().contains(level.getId() - 1);
         boolean completed = player.getCompletedLevelIds().contains(level.getId());
         int anger = (player.getCurrentLevelId() != null && player.getCurrentLevelId().equals(level.getId()))
                 ? player.getCurrentAnger() : 0;
@@ -45,7 +52,7 @@ public class LevelService {
         Set<Long> executedIds = player.getExecutedPrankIds();
 
         List<LevelState.PrankInfo> prankInfos = level.getPranks().stream().map(prank -> {
-            boolean depsmet = prank.getRequiredPranks().stream()
+            boolean depsMet = prank.getRequiredPranks().stream()
                     .allMatch(req -> executedIds.contains(req.getId()));
             return new LevelState.PrankInfo(
                 prank.getId(),
@@ -55,7 +62,7 @@ public class LevelService {
                 prank.getPosX(),
                 prank.getPosY(),
                 prank.getAngerPoints(),
-                depsmet && !executedIds.contains(prank.getId()),
+                depsMet && !executedIds.contains(prank.getId()),
                 executedIds.contains(prank.getId())
             );
         }).toList();
