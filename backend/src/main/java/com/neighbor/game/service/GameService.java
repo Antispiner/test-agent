@@ -67,6 +67,13 @@ public class GameService {
             throw new IllegalArgumentException("Prank does not belong to level " + levelId);
         }
 
+        // Validate the player has unlocked this level
+        boolean levelAccessible = p.getCurrentLevelId().equals(levelId)
+                || p.getCompletedLevelIds().contains(levelId);
+        if (!levelAccessible) {
+            throw new IllegalStateException("Level " + levelId + " is locked");
+        }
+
         if (p.getExecutedPrankIds().contains(prankId)) {
             return new PrankResult(prankId, false, "Already executed this prank!", 0, p.getCurrentAnger(), false);
         }
