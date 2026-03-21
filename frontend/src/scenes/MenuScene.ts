@@ -3,6 +3,7 @@ import { SceneManager } from '../engine/SceneManager';
 import { ApiClient, GameProgress } from '../api/client';
 import { COLORS } from '../engine/colors';
 import { drawButton, hitTest } from '../engine/draw';
+import { announce } from '../engine/a11y';
 import { LevelSelectScene } from './LevelSelectScene';
 
 export class MenuScene implements Scene {
@@ -20,6 +21,7 @@ export class MenuScene implements Scene {
 
   enter() {
     this.savedGame = !!localStorage.getItem('neighbor_player_id');
+    announce('How to Annoy Your Neighbor. Main menu. Use Tab or arrows to select, Enter to activate.');
   }
 
   render(ctx: CanvasRenderingContext2D, w: number, h: number) {
@@ -129,6 +131,7 @@ export class MenuScene implements Scene {
     }
     this.hoverStart = this.focusIndex === 0;
     this.hoverContinue = this.focusIndex === 1 && this.savedGame;
+    announce(this.focusIndex === 0 ? 'New Game button' : 'Continue button');
   }
 
   private async startNew() {

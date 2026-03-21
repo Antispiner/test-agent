@@ -3,6 +3,7 @@ import { SceneManager } from '../engine/SceneManager';
 import { ApiClient, GameProgress, LevelState } from '../api/client';
 import { COLORS } from '../engine/colors';
 import { drawButton, hitTest, roundRect } from '../engine/draw';
+import { announce } from '../engine/a11y';
 import { GameLevelScene } from './GameLevelScene';
 
 interface LevelCard {
@@ -32,6 +33,8 @@ export class LevelSelectScene implements Scene {
     this.levels = await this.api.getLevels(this.progress.playerId);
     this.buildCards();
     this.loading = false;
+    const unlocked = this.levels.filter(l => l.unlocked).length;
+    announce(`Level select. ${unlocked} of ${this.levels.length} levels available. Use arrows to navigate, Enter to select.`);
   }
 
   private buildCards() {
@@ -194,7 +197,15 @@ export class LevelSelectScene implements Scene {
       this.focusIdx = this.focusIdx < this.cards.length - 1 ? this.focusIdx + 1 : 0;
     } else if (key === 'ArrowLeft') {
       this.focusIdx = this.focusIdx > 0 ? this.focusIdx - 1 : this.cards.length - 1;
-    } else if (key === 'Enter' || key === ' ') {
+    }
+
+    if ((key === 'Tab' || key === 'ArrowRight' || key === 'ArrowLeft') && this.focusIdx >= 0) {
+      const lvl = this.cards[this.focusIdx].level;
+      const status = lvl.completed ? 'completed' : lvl.unlocked ? 'unlocked' : 'locked';
+      announce(`${lvl.name}, ${status}`);
+    }
+
+    if (key === 'Enter' || key === ' ') {
       if (this.focusIdx >= 0 && this.focusIdx < this.cards.length) {
         const card = this.cards[this.focusIdx];
         if (card.level.unlocked) {

@@ -3,6 +3,7 @@ import { SceneManager } from '../engine/SceneManager';
 import { ApiClient, GameProgress, LevelState } from '../api/client';
 import { COLORS } from '../engine/colors';
 import { drawButton, hitTest, roundRect } from '../engine/draw';
+import { announce } from '../engine/a11y';
 import { LevelSelectScene } from './LevelSelectScene';
 
 export class LevelCompleteScene implements Scene {
@@ -32,6 +33,8 @@ export class LevelCompleteScene implements Scene {
         size: Math.random() * 6 + 3,
       });
     }
+    const executed = this.level.pranks.filter(p => p.executed).length;
+    announce(`Level complete! ${this.level.name}. ${executed} pranks executed. Total score ${this.progress.totalScore}. Press Enter to continue.`);
   }
 
   render(ctx: CanvasRenderingContext2D, w: number, h: number) {

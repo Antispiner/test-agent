@@ -4,6 +4,7 @@ import { ApiClient, GameProgress, LevelState, PrankInfo, PrankResult } from '../
 import { COLORS } from '../engine/colors';
 import { drawAngerMeter, drawButton, hitTest, roundRect } from '../engine/draw';
 import { ROOMS, RoomObject } from '../engine/rooms';
+import { announce } from '../engine/a11y';
 import { LevelCompleteScene } from './LevelCompleteScene';
 import { LevelSelectScene } from './LevelSelectScene';
 
@@ -46,6 +47,8 @@ export class GameLevelScene implements Scene {
   enter() {
     this.animAnger = this.level.angerMeter;
     this.buildHitboxes();
+    const available = this.level.pranks.filter(p => p.available && !p.executed).length;
+    announce(`${this.level.name}. ${available} pranks available. Use Tab or arrows to cycle pranks, Enter to execute, Escape for level select.`);
   }
 
   private buildHitboxes() {
@@ -375,11 +378,13 @@ export class GameLevelScene implements Scene {
       }
     }
 
-    // Update hover state to match keyboard focus
+    // Update hover state and announce focused prank
     if (this.focusPrankIdx >= 0 && this.focusPrankIdx < this.prankHitboxes.length) {
       const hb = this.prankHitboxes[this.focusPrankIdx];
       this.hoverPrank = hb.prank;
       this.tooltip = { x: hb.x + hb.w / 2, y: hb.y, prank: hb.prank };
+      const status = hb.prank.executed ? 'done' : hb.prank.available ? 'available' : 'locked';
+      announce(`${hb.prank.name}, ${status}. ${hb.prank.description}`);
     }
   }
 
@@ -420,6 +425,7 @@ export class GameLevelScene implements Scene {
 
       if (result.success) {
         this.addToast(`\u2713 ${prank.name} \u2014 +${result.angerGained} anger!`, true);
+        announce(`${prank.name} executed! Plus ${result.angerGained} anger. Total anger ${result.totalAnger} of ${this.level.maxAnger}.`);
         prank.executed = true;
         this.level.angerMeter = result.totalAnger;
 
