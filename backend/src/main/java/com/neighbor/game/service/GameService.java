@@ -2,10 +2,12 @@ package com.neighbor.game.service;
 
 import com.neighbor.game.dto.GameProgress;
 import com.neighbor.game.dto.PrankResult;
+import com.neighbor.game.model.Level;
 import com.neighbor.game.model.PlayerProgress;
 import com.neighbor.game.model.Prank;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import com.neighbor.game.repository.LevelRepository;
+import com.neighbor.game.repository.PlayerProgressRepository;
+import com.neighbor.game.repository.PrankRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,8 +17,15 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class GameService {
 
-    @PersistenceContext
-    private EntityManager em;
+    private final PlayerProgressRepository playerRepo;
+    private final PrankRepository prankRepo;
+    private final LevelRepository levelRepo;
+
+    public GameService(PlayerProgressRepository playerRepo, PrankRepository prankRepo, LevelRepository levelRepo) {
+        this.playerRepo = playerRepo;
+        this.prankRepo = prankRepo;
+        this.levelRepo = levelRepo;
+    }
 
     @Transactional
     public GameProgress startNewGame() {
@@ -25,30 +34,33 @@ public class GameService {
         p.setCurrentLevelId(1L);
         p.setCurrentAnger(0);
         p.setTotalScore(0);
-        em.persist(p);
+        playerRepo.save(p);
         return toDto(p);
     }
 
+    @Transactional(readOnly = true)
     public GameProgress getProgress(String playerId) {
-        PlayerProgress p = em.find(PlayerProgress.class, playerId);
-        if (p == null) throw new IllegalArgumentException("Player not found: " + playerId);
+        PlayerProgress p = playerRepo.findById(playerId)
+                .orElseThrow(() -> new PlayerNotFoundException(playerId));
         return toDto(p);
     }
 
     @Transactional
     public void resetProgress(String playerId) {
-        PlayerProgress p = em.find(PlayerProgress.class, playerId);
-        if (p != null) em.remove(p);
+        playerRepo.deleteById(playerId);
     }
 
     @Transactional
     public PrankResult executePrank(String playerId, long levelId, long prankId) {
-        PlayerProgress p = em.find(PlayerProgress.class, playerId);
-        if (p == null) throw new IllegalArgumentException("Player not found: " + playerId);
+        PlayerProgress p = playerRepo.findById(playerId)
+                .orElseThrow(() -> new PlayerNotFoundException(playerId));
 
-        Prank prank = em.find(Prank.class, prankId);
-        if (prank == null) throw new IllegalArgumentException("Prank not found: " + prankId);
-        if (prank.getLevel().getId() != levelId) throw new IllegalArgumentException("Prank does not belong to this level");
+        Prank prank = prankRepo.findById(prankId)
+                .orElseThrow(() -> new PrankNotFoundException(prankId));
+
+        if (!prank.getLevel().getId().equals(levelId)) {
+            throw new IllegalArgumentException("Prank does not belong to level " + levelId);
+        }
 
         if (p.getExecutedPrankIds().contains(prankId)) {
             return new PrankResult(prankId, false, "Already executed this prank!", 0, p.getCurrentAnger(), false);
@@ -77,16 +89,17 @@ public class GameService {
         }
 
         // Check level completion
-        var level = prank.getLevel();
+        Level level = prank.getLevel();
         boolean levelCompleted = p.getCurrentAnger() >= level.getMaxAnger();
         if (levelCompleted && !p.getCompletedLevelIds().contains(levelId)) {
             p.getCompletedLevelIds().add(levelId);
             p.setCurrentAnger(0);
-            p.setCurrentLevelId(levelId + 1);
+            // Advance to next level if available
+            levelRepo.findById(levelId + 1).ifPresent(next -> p.setCurrentLevelId(next.getId()));
             message += " LEVEL COMPLETE!";
         }
 
-        em.merge(p);
+        playerRepo.save(p);
         return new PrankResult(prankId, success, message, angerGained, p.getCurrentAnger(), levelCompleted);
     }
 
