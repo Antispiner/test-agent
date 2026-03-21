@@ -1,0 +1,124 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #e0e0e0;
+}
+
+.container {
+  text-align: center;
+  padding: 2rem;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin-bottom: 0.5rem;
+  background: linear-gradient(90deg, #00d2ff, #7b2ff7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.status {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  min-height: 2rem;
+  transition: color 0.3s;
+}
+
+.status.winner {
+  color: #00e676;
+  font-weight: 700;
+}
+
+.status.draw {
+  color: #ffc107;
+  font-weight: 700;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: min(80vw, 360px);
+  margin: 0 auto 1.5rem;
+}
+
+.cell {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, border-color 0.2s;
+  user-select: none;
+}
+
+.cell:hover:not(.taken),
+.cell:focus-visible:not(.taken) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.03);
+  outline: none;
+}
+
+.cell:focus-visible {
+  outline: 2px solid #7b2ff7;
+  outline-offset: 2px;
+}
+
+.cell.taken {
+  cursor: default;
+}
+
+.cell.x {
+  color: #00d2ff;
+  text-shadow: 0 0 12px rgba(0, 210, 255, 0.5);
+}
+
+.cell.o {
+  color: #ff6ec7;
+  text-shadow: 0 0 12px rgba(255, 110, 199, 0.5);
+}
+
+.cell.win {
+  background: rgba(0, 230, 118, 0.15);
+  border-color: #00e676;
+}
+
+.btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #7b2ff7, #00d2ff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
