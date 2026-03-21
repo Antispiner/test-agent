@@ -6,4 +6,5 @@ export interface Scene {
   render(ctx: CanvasRenderingContext2D, width: number, height: number): void;
   onClick(x: number, y: number): void | Promise<void>;
   onMouseMove?(x: number, y: number): void;
+  onKeyDown?(key: string): void | Promise<void>;
 }

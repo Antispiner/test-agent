@@ -3,6 +3,7 @@ import { SceneManager } from '../engine/SceneManager';
 import { ApiClient, GameProgress, LevelState } from '../api/client';
 import { COLORS } from '../engine/colors';
 import { drawButton, hitTest, roundRect } from '../engine/draw';
+import { announce } from '../engine/a11y';
 import { GameLevelScene } from './GameLevelScene';
 
 interface LevelCard {
@@ -17,6 +18,7 @@ export class LevelSelectScene implements Scene {
   private levels: LevelState[] = [];
   private cards: LevelCard[] = [];
   private hoverIdx = -1;
+  private focusIdx = -1;
   private loading = true;
 
   constructor(
@@ -31,6 +33,8 @@ export class LevelSelectScene implements Scene {
     this.levels = await this.api.getLevels(this.progress.playerId);
     this.buildCards();
     this.loading = false;
+    const unlocked = this.levels.filter(l => l.unlocked).length;
+    announce(`Level select. ${unlocked} of ${this.levels.length} levels available. Use arrows to navigate, Enter to select.`);
   }
 
   private buildCards() {
@@ -78,7 +82,7 @@ export class LevelSelectScene implements Scene {
 
     // Level cards
     for (let i = 0; i < this.cards.length; i++) {
-      this.renderCard(ctx, this.cards[i], i === this.hoverIdx);
+      this.renderCard(ctx, this.cards[i], i === this.hoverIdx || i === this.focusIdx, i === this.focusIdx);
     }
 
     // Footer hint
@@ -87,7 +91,7 @@ export class LevelSelectScene implements Scene {
     ctx.fillText('Click a level to play. Complete levels to unlock the next one.', w / 2, h - 40);
   }
 
-  private renderCard(ctx: CanvasRenderingContext2D, card: LevelCard, hover: boolean) {
+  private renderCard(ctx: CanvasRenderingContext2D, card: LevelCard, hover: boolean, focused: boolean) {
     const { level, x, y, w, h } = card;
     const locked = !level.unlocked;
     const completed = level.completed;
@@ -95,6 +99,19 @@ export class LevelSelectScene implements Scene {
     // Card background
     const bgColor = locked ? '#1a1a2e' : hover ? COLORS.panelLight : COLORS.panel;
     roundRect(ctx, x, y, w, h, 12, bgColor, locked ? COLORS.locked : COLORS.primary);
+
+    // Keyboard focus ring
+    if (focused) {
+      ctx.save();
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 3]);
+      ctx.beginPath();
+      ctx.rect(x - 4, y - 4, w + 8, h + 8);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
 
     // Room icon area
     const iconColors: Record<string, string> = {
@@ -170,6 +187,42 @@ export class LevelSelectScene implements Scene {
         this.hoverIdx = i;
         break;
       }
+    }
+  }
+
+  async onKeyDown(key: string) {
+    if (this.loading || this.cards.length === 0) return;
+
+    if (key === 'Tab' || key === 'ArrowRight') {
+      this.focusIdx = this.focusIdx < this.cards.length - 1 ? this.focusIdx + 1 : 0;
+    } else if (key === 'ArrowLeft') {
+      this.focusIdx = this.focusIdx > 0 ? this.focusIdx - 1 : this.cards.length - 1;
+    }
+
+    if ((key === 'Tab' || key === 'ArrowRight' || key === 'ArrowLeft') && this.focusIdx >= 0) {
+      const lvl = this.cards[this.focusIdx].level;
+      const status = lvl.completed ? 'completed' : lvl.unlocked ? 'unlocked' : 'locked';
+      announce(`${lvl.name}, ${status}`);
+    }
+
+    if (key === 'Enter' || key === ' ') {
+      if (this.focusIdx >= 0 && this.focusIdx < this.cards.length) {
+        const card = this.cards[this.focusIdx];
+        if (card.level.unlocked) {
+          const levelState = await this.api.getLevel(this.progress.playerId, card.level.id);
+          await this.sceneManager.switchTo(
+            new GameLevelScene(
+              this.sceneManager, this.api,
+              this.progress, levelState, this.setProgress
+            )
+          );
+        }
+      }
+    } else if (key === 'Escape') {
+      const { MenuScene } = await import('./MenuScene');
+      await this.sceneManager.switchTo(
+        new MenuScene(this.sceneManager, this.api, this.setProgress)
+      );
     }
   }
 

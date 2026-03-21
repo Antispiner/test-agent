@@ -33,6 +33,15 @@ export class Game {
       const y = (e.clientY - rect.top) * scaleY;
       this.sceneManager.onMouseMove(x, y);
     });
+
+    this.canvas.setAttribute('tabindex', '0');
+    this.canvas.addEventListener('keydown', (e) => {
+      if (['Tab', 'Enter', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+      this.sceneManager.onKeyDown(e.key);
+    });
+    this.canvas.focus();
   }
 
   async start() {

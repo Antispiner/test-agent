@@ -3,11 +3,14 @@ import { SceneManager } from '../engine/SceneManager';
 import { ApiClient, GameProgress, LevelState } from '../api/client';
 import { COLORS } from '../engine/colors';
 import { drawButton, hitTest, roundRect } from '../engine/draw';
+import { announce } from '../engine/a11y';
 import { LevelSelectScene } from './LevelSelectScene';
+import { GameLevelScene } from './GameLevelScene';
 
 export class LevelCompleteScene implements Scene {
   private hoverNext = false;
   private hoverLevels = false;
+  private focusIndex = 0;
   private confetti: Array<{ x: number; y: number; vx: number; vy: number; color: string; size: number }> = [];
 
   constructor(
@@ -31,6 +34,8 @@ export class LevelCompleteScene implements Scene {
         size: Math.random() * 6 + 3,
       });
     }
+    const executed = this.level.pranks.filter(p => p.executed).length;
+    announce(`Level complete! ${this.level.name}. ${executed} pranks executed. Total score ${this.progress.totalScore}. Press Enter to continue.`);
   }
 
   render(ctx: CanvasRenderingContext2D, w: number, h: number) {
@@ -83,8 +88,22 @@ export class LevelCompleteScene implements Scene {
     // Buttons
     const btnW = 180;
     const btnH = 44;
-    drawButton(ctx, w / 2 - btnW - 10, 380, btnW, btnH, '\u2190 Level Select', this.hoverLevels);
-    drawButton(ctx, w / 2 + 10, 380, btnW, btnH, 'Next Level \u2192', this.hoverNext);
+    const levelsX = w / 2 - btnW - 10;
+    const nextX = w / 2 + 10;
+    drawButton(ctx, levelsX, 380, btnW, btnH, '\u2190 Level Select', this.hoverLevels);
+    drawButton(ctx, nextX, 380, btnW, btnH, 'Next Level \u2192', this.hoverNext);
+
+    // Keyboard focus ring
+    const focusX = this.focusIndex === 0 ? levelsX : nextX;
+    ctx.save();
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath();
+    ctx.rect(focusX - 4, 376, btnW + 8, btnH + 8);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
   onMouseMove(x: number, y: number) {
@@ -95,18 +114,54 @@ export class LevelCompleteScene implements Scene {
     this.hoverNext = hitTest(x, y, w / 2 + 10, 380, btnW, btnH);
   }
 
+  async onKeyDown(key: string) {
+    if (key === 'Tab' || key === 'ArrowRight') {
+      this.focusIndex = this.focusIndex === 0 ? 1 : 0;
+    } else if (key === 'ArrowLeft') {
+      this.focusIndex = this.focusIndex === 1 ? 0 : 1;
+    } else if (key === 'Enter' || key === ' ') {
+      await this.activateButton(this.focusIndex);
+      return;
+    }
+    this.hoverLevels = this.focusIndex === 0;
+    this.hoverNext = this.focusIndex === 1;
+    announce(this.focusIndex === 0 ? 'Level Select button' : 'Next Level button');
+  }
+
   async onClick(x: number, y: number) {
     const btnW = 180;
     const btnH = 44;
     const w = 800;
 
-    if (hitTest(x, y, w / 2 - btnW - 10, 380, btnW, btnH) ||
-        hitTest(x, y, w / 2 + 10, 380, btnW, btnH)) {
-      const freshProgress = await this.api.getProgress(this.progress.playerId);
-      this.setProgress(freshProgress);
-      await this.sceneManager.switchTo(
-        new LevelSelectScene(this.sceneManager, this.api, freshProgress, this.setProgress)
-      );
+    if (hitTest(x, y, w / 2 - btnW - 10, 380, btnW, btnH)) {
+      await this.activateButton(0);
+    } else if (hitTest(x, y, w / 2 + 10, 380, btnW, btnH)) {
+      await this.activateButton(1);
     }
+  }
+
+  private async activateButton(index: number) {
+    const freshProgress = await this.api.getProgress(this.progress.playerId);
+    this.setProgress(freshProgress);
+
+    if (index === 1) {
+      // "Next Level" — try to load the next level
+      const nextLevelId = this.level.id + 1;
+      try {
+        const nextLevel = await this.api.getLevel(freshProgress.playerId, nextLevelId);
+        if (nextLevel && nextLevel.unlocked) {
+          await this.sceneManager.switchTo(
+            new GameLevelScene(this.sceneManager, this.api, freshProgress, nextLevel, this.setProgress)
+          );
+          return;
+        }
+      } catch {
+        // Next level doesn't exist or isn't available — fall through to level select
+      }
+    }
+
+    await this.sceneManager.switchTo(
+      new LevelSelectScene(this.sceneManager, this.api, freshProgress, this.setProgress)
+    );
   }
 }
