@@ -1,6 +1,8 @@
 # Stage 1: Build
-FROM node:22-alpine AS build
+FROM node:21-alpine AS build
 WORKDIR /app
+ARG VITE_API_BASE_URL=
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 COPY package.json package-lock.json* ./
 RUN npm install
 COPY . .
